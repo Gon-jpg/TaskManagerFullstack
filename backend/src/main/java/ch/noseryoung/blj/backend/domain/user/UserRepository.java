@@ -1,4 +1,7 @@
 package ch.noseryoung.blj.backend.domain.user;
 
-public interface UserRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+    User findByUsername(String username);
 }
