@@ -15,27 +15,13 @@ public class CategoryService {
         return categoryRepository.save(category);
     }
 
-    public Category getCategoryById(Long id) {
-        return categoryRepository.findById(id).orElse(null);
+    public Category updateCategory(int id, Category categoryDetails) {
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new RuntimeException("Category not found"));
+        category.setName(categoryDetails.getName());
+        return categoryRepository.save(category);
     }
 
-    public Category updateCategory(Long id, Category categoryDetails) {
-        Category category = getCategoryById(id);
-        if (category != null) {
-            category.setName(categoryDetails.getName());
-            return categoryRepository.save(category);
-        }
-        return null;
-    }
-
-    public void deleteCategory(Long id) {
-        Category category = getCategoryById(id);
-        if (category != null) {
-            categoryRepository.delete(category);
-        }
-    }
-
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public void deleteCategory(int id) {
+        categoryRepository.deleteById(id);
     }
 }

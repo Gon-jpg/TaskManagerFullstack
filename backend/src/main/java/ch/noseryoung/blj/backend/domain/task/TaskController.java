@@ -9,36 +9,41 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/users/{userId}/tasks")
+@RequestMapping("/api/tasks")
 public class TaskController {
 
     @Autowired
     private TaskService taskService;
 
-    @Autowired
-    private UserService userService;
+    @PostMapping
+    public ResponseEntity<Task> createTask(@RequestBody Task task) {
+        Task createdTask = taskService.createTask(task);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+    }
 
     @GetMapping
-    public List<Task> getAllTasksForUser(@PathVariable Long userId) {
-        return taskService.getTasksByUserId(userId);
+    public List<Task> getAllTasks() {
+        return taskService.getAllTasks();
     }
 
     @GetMapping("/{taskId}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long userId, @PathVariable Long taskId) {
+    public ResponseEntity<Task> getTaskById(@PathVariable Long taskId) {
         Task task = taskService.getTaskById(taskId);
-        if (task != null && task.getUser().getId().equals(userId)) {
-            return ResponseEntity.ok(task);
-        }
-        return ResponseEntity.notFound().build();
+        return task != null ? ResponseEntity.ok(task) : ResponseEntity.notFound().build();
     }
 
-    @PostMapping
-    public ResponseEntity<Task> createTask(@PathVariable Long userId, @RequestBody Task task) {
-        User user = userService.getUserById(userId);
-        if (user != null) {
-            task.setUser(user);
-            Task createdTask = taskService.createTask(task);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+    @PutMapping("/{taskId}")
+    public ResponseEntity<Task> updateTask(@PathVariable Long taskId, @RequestBody Task taskDetails) {
+        Task updatedTask = taskService.updateTask(taskId, taskDetails);
+        return updatedTask != null ? ResponseEntity.ok(updatedTask) : ResponseEntity.notFound().build();
+    }
+
+    @DeleteMapping("/{taskId}")
+    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
+        Task task = taskService.getTaskById(taskId);
+        if (task != null) {
+            taskService.deleteTask(taskId);
+            return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
     }

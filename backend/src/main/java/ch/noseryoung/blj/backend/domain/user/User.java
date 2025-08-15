@@ -4,11 +4,13 @@ import ch.noseryoung.blj.backend.domain.task.Task;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 
 @Entity
-@Table(name = "user")
+@Table(name = "app_user")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,7 +25,17 @@ public class User {
 
     @Column(name = "password", nullable = false)
     private String password;
-
+    
     @OneToMany(mappedBy =  "user", cascade = CascadeType.ALL)
-    private Set<Task> tasks;
+    private Set<Task> tasks = new HashSet<>();
+
+    public void addTask(Task task) {
+        tasks.add(task);
+        task.setUser(this);
+    }
+
+    public void removeTask(Task task) {
+        tasks.remove(task);
+        task.setUser(null);
+    }
 }
