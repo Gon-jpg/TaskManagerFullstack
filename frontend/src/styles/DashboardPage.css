@@ -97,14 +97,29 @@
   padding: 2rem;
 }
 
-.dashboard-content {
+/* NEW: Container for both forms to enable side-by-side layout */
+.forms-container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2fr 1fr; /* Task form is wider than the category form */
   gap: 2rem;
+  margin-bottom: 2rem;
+  align-items: start; /* Aligns items to the top of the grid */
 }
 
+
+/* Existing .dashboard-content styles need to be adjusted if .forms-container is now the primary grid */
+/* .dashboard-content can now wrap the forms-container and task-list-section */
+.dashboard-content {
+  display: flex; /* Changed from grid to flex for better flow with the new forms-container */
+  flex-direction: column; /* Stack sections vertically */
+  gap: 2rem; /* Gap between forms-container and task-list-section */
+}
+
+
 .task-form-section,
-.task-list-section {
+.task-list-section,
+/* NEW: Style for the new category form section */
+.category-form-section {
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
@@ -112,7 +127,8 @@
 }
 
 .task-form-section h2,
-.task-list-section h2 {
+.task-list-section h2,
+.category-form-section h2 { /* NEW: Include category form heading */
   font-size: 1.5rem;
   font-weight: 600;
   color: #2d3748;
@@ -124,6 +140,22 @@
   flex-direction: column;
   gap: 1rem;
 }
+
+/* NEW: Styles for the category form */
+.category-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.category-form .form-group {
+  margin-bottom: 1rem; /* Adjust if gap property on form is sufficient */
+}
+.category-form .form-actions {
+  margin-top: 1.5rem;
+  text-align: right; /* Align button to the right */
+  justify-content: flex-end; /* Ensure button aligns right in flex container */
+}
+
 
 .form-row {
   display: grid;
@@ -364,9 +396,16 @@
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .dashboard-content {
-    grid-template-columns: 1fr;
+  /* Adjust the forms-container for smaller screens */
+  .forms-container {
+    grid-template-columns: 1fr; /* Stack the forms on top of each other */
+    gap: 2rem; /* Keep gap between stacked forms */
   }
+
+  /* No need for .dashboard-content to be a grid here, it's already a flex column */
+  /* .dashboard-content {
+    grid-template-columns: 1fr;
+  } */
   
   .header-content {
     flex-direction: column;

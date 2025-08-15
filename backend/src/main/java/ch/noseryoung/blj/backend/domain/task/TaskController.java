@@ -7,6 +7,7 @@ import ch.noseryoung.blj.backend.domain.category.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -30,40 +31,12 @@ public class TaskController {
     private CategoryService categoryService;
 
     @PostMapping
-    public ResponseEntity<?> createTask(@Valid @RequestBody TaskCreateRequest request) {
-        try {
-            // Get user and category
-            User user = userService.getUserById(request.getUserId());
-            if (user == null) {
-                Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("message", "User not found");
-                return ResponseEntity.badRequest().body(errorResponse);
-            }
+    public ResponseEntity<Task> createTask(@RequestBody TaskCreateDTO taskDTO, Authentication authentication) {
+        String username = authentication.getName();
 
-            Category category = categoryService.getCategoryById(Long.valueOf(request.getCategoryId()));
-            if (category == null) {
-                Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("message", "Category not found");
-                return ResponseEntity.badRequest().body(errorResponse);
-            }
+        Task createdTask = taskService.createTask(taskDTO, username);
 
-            // Create task
-            Task task = new Task();
-            task.setTitle(request.getTitle());
-            task.setDescription(request.getDescription());
-            task.setCompleted(false);
-            task.setCreatedAt(LocalDateTime.now());
-            task.setUser(user);
-            task.setCategory(category);
-
-            Task createdTask = taskService.createTask(task);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
-
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "Failed to create task: " + e.getMessage());
-            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return new ResponseEntity<>(createdTask, HttpStatus.CREATED);
     }
 
     @GetMapping

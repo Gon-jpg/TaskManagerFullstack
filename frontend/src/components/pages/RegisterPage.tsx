@@ -1,8 +1,9 @@
 import React from 'react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { Formik, Form, Field, ErrorMessage, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
-import api from '../../services/api';
+import { usersAPI } from '../../services/api';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import '../../styles/RegisterPage.css';
 
 interface RegisterFormValues {
@@ -37,22 +38,29 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (
     values: RegisterFormValues,
-    { setSubmitting, setFieldError, setStatus }: any
+    { setSubmitting, setFieldError, setStatus }: FormikHelpers<RegisterFormValues>
   ) => {
     try {
       setStatus(null);
       const { confirmPassword, ...registerData } = values;
-      await api.post('/users', registerData); // Using your existing endpoint
-      setStatus({ type: 'success', message: 'Registration successful! Please login.' });
+      
+      await usersAPI.create(registerData); 
+
+      toast.success('Registration successful! Please login.');
+      setStatus({ type: 'success', message: 'Registration successful! Redirecting to login...' });
       setTimeout(() => navigate('/login'), 2000);
     } catch (error: any) {
       setSubmitting(false);
       if (error.response?.status === 409) {
         setFieldError('username', 'This username is already taken');
+        setStatus({ type: 'error', message: 'Username taken.' });
+        toast.error('Username is already taken.');
       } else if (error.response?.data?.message) {
         setStatus({ type: 'error', message: error.response.data.message });
+        toast.error(error.response.data.message);
       } else {
         setStatus({ type: 'error', message: 'Registration failed. Please try again.' });
+        toast.error('Registration failed. Please try again.');
       }
       console.error('Registration failed', error);
     }

@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
+import { toast } from 'react-toastify';
 
-// Create axios instance with base configuration
 const api = axios.create({
   baseURL: 'http://localhost:8080/api',
   timeout: 10000,
@@ -9,7 +9,6 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -23,31 +22,29 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for error handling
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
   (error: AxiosError) => {
-    // Handle specific error cases
     if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      toast.error('Session expired or unauthorized access. Please log in again.');
+      window.location.href = '/login'; 
     } else if (error.response?.status === 403) {
-      // Forbidden
-      console.error('Access forbidden');
+      toast.error('Access forbidden. You do not have permission for this action.');
+      console.error('Access forbidden', error.response.data);
     } else if (error.response?.status === 404) {
-      // Not found
-      console.error('Resource not found');
+      toast.warn('Resource not found.');
+      console.error('Resource not found', error.response.data);
     } else if (error && 'response' in error && error.response && error.response.status >= 500) {
-      // Server error
-      console.error('Server error occurred');
+      toast.error('Server error occurred. Please try again later.');
+      console.error('Server error occurred', error.response.data);
     } else if (error.code === 'ECONNABORTED') {
-      // Timeout
+      toast.error('Request timed out. Please check your network connection.');
       console.error('Request timeout');
     } else if (!error.response) {
-      // Network error
+      toast.error('Network error - please check your internet connection.');
       console.error('Network error - please check your connection');
     }
 
@@ -55,24 +52,24 @@ api.interceptors.response.use(
   }
 );
 
-// API endpoints
 export const authAPI = {
   login: (credentials: { username: string; password: string }) =>
     api.post('/auth/login', credentials),
-  
   register: (userData: { username: string; password: string }) =>
     api.post('/auth/register', userData),
   
-  logout: () => api.post('/auth/logout'),
+  logout: () => Promise.resolve(),
   
-  getCurrentUser: () => api.get('/auth/me'),
+  getCurrentUser: () => api.get('/auth/me'), 
+
+  validateToken: () => api.get('/auth/validate-token'),
 };
 
 export const usersAPI = {
   getAll: () => api.get('/users'),
   getById: (id: number) => api.get(`/users/${id}`),
   create: (userData: { username: string; password: string }) =>
-    api.post('/users', userData),
+    api.post('/users', userData), 
   update: (id: number, userData: Partial<{ username: string; password: string }>) =>
     api.put(`/users/${id}`, userData),
   delete: (id: number) => api.delete(`/users/${id}`),
@@ -105,10 +102,9 @@ export const categoriesAPI = {
     api.post('/categories', categoryData),
   update: (id: number, categoryData: { name: string }) =>
     api.put(`/categories/${id}`, categoryData),
-  delete: (id: number) => api.delete(`/categories/${id}`),
+  delete: (id: number) => api.delete('/categories/${id}'),
 };
 
-// Helper functions
 export const handleApiError = (error: AxiosError) => {
   if (error.response?.data) {
     return error.response.data;

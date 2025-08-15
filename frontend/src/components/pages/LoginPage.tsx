@@ -1,9 +1,8 @@
 import React from 'react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { Formik, Form, Field, ErrorMessage, FormikHelpers } from 'formik';
 import * as Yup from 'yup';
 import { useAuth } from '../../hooks/useAuth';
-import api from '../../services/api';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import '../../styles/LoginPage.css';
 
 interface LoginFormValues {
@@ -23,26 +22,17 @@ const LoginSchema = Yup.object().shape({
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const handleSubmit = async (
     values: LoginFormValues,
-    { setSubmitting, setFieldError, setStatus }: any
+    { setSubmitting, setStatus }: FormikHelpers<LoginFormValues>
   ) => {
     try {
       setStatus(null);
-      const response = await api.post('/auth/login', values);
-      login(response.data.token);
-      navigate('/dashboard');
+      await login(values);
     } catch (error: any) {
       setSubmitting(false);
-      if (error.response?.status === 401) {
-        setStatus('Invalid username or password');
-      } else if (error.response?.status === 404) {
-        setFieldError('username', 'User not found');
-      } else {
-        setStatus('An error occurred. Please try again.');
-      }
+      setStatus('Login failed. Please check your username and password.'); 
       console.error('Login failed', error);
     }
   };

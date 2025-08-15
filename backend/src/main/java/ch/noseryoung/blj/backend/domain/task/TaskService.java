@@ -1,6 +1,9 @@
-// Fixed TaskService.java - Use consistent Long IDs
 package ch.noseryoung.blj.backend.domain.task;
 
+import ch.noseryoung.blj.backend.domain.category.Category;
+import ch.noseryoung.blj.backend.domain.category.CategoryRepository;
+import ch.noseryoung.blj.backend.domain.user.User;
+import ch.noseryoung.blj.backend.domain.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,8 +13,16 @@ import java.util.List;
 @Service
 public class TaskService {
 
+    private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
+
     @Autowired
-    private TaskRepository taskRepository;
+    public TaskService(TaskRepository taskRepository, UserRepository userRepository, CategoryRepository categoryRepository) {
+        this.taskRepository = taskRepository;
+        this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
+    }
 
     public List<Task> getAllTasks() {
         return taskRepository.findAll();
@@ -29,10 +40,24 @@ public class TaskService {
         return taskRepository.findByUserIdAndCompleted(userId, completed);
     }
 
-    public Task createTask(Task task) {
-        if (task.getCreatedAt() == null) {
-            task.setCreatedAt(LocalDateTime.now());
+    public Task createTask(TaskCreateDTO taskDTO, String username) {
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            throw new RuntimeException("User not found");
         }
+
+        Category category = categoryRepository.findById(taskDTO.getCategoryId())
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        Task task = new Task();
+        task.setTitle(taskDTO.getTitle());
+        task.setDescription(taskDTO.getDescription());
+        task.setCompleted(false);
+        task.setCreatedAt(LocalDateTime.now());
+
+        task.setUser(user);
+        task.setCategory(category);
+
         return taskRepository.save(task);
     }
 

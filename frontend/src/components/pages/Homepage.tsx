@@ -11,7 +11,7 @@ const Homepage: React.FC = () => {
       <nav className="navbar">
         <div className="nav-content">
           <div className="nav-brand">
-            <h2>TaskMaster</h2>
+            <h2>Task Manager</h2>
           </div>
           <div className="nav-links">
             {token ? (
@@ -37,7 +37,7 @@ const Homepage: React.FC = () => {
           <div className="hero-text">
             <h1 className="hero-title">
               Organize Your Life with
-              <span className="gradient-text"> TaskMaster</span>
+              <span className="gradient-text"> Task Manager</span>
             </h1>
             <p className="hero-subtitle">
               The ultimate task management solution that helps you stay productive,
@@ -115,7 +115,7 @@ const Homepage: React.FC = () => {
 
       <footer className="homepage-footer">
         <div className="container">
-          <p>&copy; 2024 TaskMaster. Built with React & Spring Boot.</p>
+          <p>2025 Task Manager. Built with React & Spring Boot.</p>
         </div>
       </footer>
     </div>
