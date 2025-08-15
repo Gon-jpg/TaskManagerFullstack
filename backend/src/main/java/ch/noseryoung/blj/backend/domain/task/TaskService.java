@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TaskService {
@@ -15,35 +16,24 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
-    public Task getTaskById(Long id) {
-        return taskRepository.findById(id).orElse(null);
+    public Optional<Task> getTaskById(int id) {
+        return taskRepository.findById(id);
     }
 
-    public List<Task> getTasksByUserId(Long userId) {
-        return (List<Task>) taskRepository.findAllTasksByUserId(userId);
-    }
-
-    // Create a new task
     public Task createTask(Task task) {
         return taskRepository.save(task);
     }
 
-    public Task deleteTask(Long id) {
-        Task task = getTaskById(id);
-        if (task != null) {
-            taskRepository.delete(task);
-        }
-        return task;
+    public Task updateTask(int id, Task taskDetails) {
+        Task task = taskRepository.findById(id).orElseThrow(() -> new RuntimeException("Task not found"));
+        task.setTitle(taskDetails.getTitle());
+        task.setDescription(taskDetails.getDescription());
+        task.setCompleted(taskDetails.isCompleted());
+        task.setCategory(taskDetails.getCategory());
+        return taskRepository.save(task);
     }
 
-    public Task updateTask(Long id, Task taskDetails) {
-        Task task = getTaskById(id);
-        if (task != null) {
-            task.setTitle(taskDetails.getTitle());
-            task.setDescription(taskDetails.getDescription());
-            task.setCompleted(taskDetails.isCompleted());
-            return taskRepository.save(task);
-        }
-        return null;
+    public void deleteTask(int id) {
+        taskRepository.deleteById(id);
     }
 }

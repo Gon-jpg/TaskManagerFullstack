@@ -1,25 +1,25 @@
 package ch.noseryoung.blj.backend.domain.category;
 
 import ch.noseryoung.blj.backend.domain.task.Task;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Set;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "category")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Category {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private int id;
 
-    @Column(name = "name", nullable = false, unique = true)
     private String name;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "category")
+    @JsonManagedReference
     private Set<Task> tasks;
 }

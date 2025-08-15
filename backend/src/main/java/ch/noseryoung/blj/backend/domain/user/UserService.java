@@ -1,16 +1,22 @@
 package ch.noseryoung.blj.backend.domain.user;
 
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder; // Import PasswordEncoder
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
+
 
 @Service
 public class UserService {
 
     @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -21,6 +27,9 @@ public class UserService {
     }
 
     public User createUser(User user) {
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new RuntimeException("User already exists");
+        }
         return userRepository.save(user);
     }
 
@@ -36,7 +45,6 @@ public class UserService {
         User user = getUserById(id);
         if (user != null) {
             user.setUsername(userDetails.getUsername());
-            user.setPassword(userDetails.getPassword());
             return userRepository.save(user);
         }
         return null;
