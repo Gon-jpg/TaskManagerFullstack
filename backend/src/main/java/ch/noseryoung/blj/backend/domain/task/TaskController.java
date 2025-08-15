@@ -2,49 +2,174 @@ package ch.noseryoung.blj.backend.domain.task;
 
 import ch.noseryoung.blj.backend.domain.user.User;
 import ch.noseryoung.blj.backend.domain.user.UserService;
+import ch.noseryoung.blj.backend.domain.category.Category;
+import ch.noseryoung.blj.backend.domain.category.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tasks")
+@CrossOrigin(origins = "http://localhost:3000")
 public class TaskController {
 
     @Autowired
     private TaskService taskService;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private CategoryService categoryService;
+
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
-        Task createdTask = taskService.createTask(task);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+    public ResponseEntity<?> createTask(@Valid @RequestBody TaskCreateRequest request) {
+        try {
+            // Get user and category
+            User user = userService.getUserById(request.getUserId());
+            if (user == null) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "User not found");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            Category category = categoryService.getCategoryById(Long.valueOf(request.getCategoryId()));
+            if (category == null) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "Category not found");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            // Create task
+            Task task = new Task();
+            task.setTitle(request.getTitle());
+            task.setDescription(request.getDescription());
+            task.setCompleted(false);
+            task.setCreatedAt(LocalDateTime.now());
+            task.setUser(user);
+            task.setCategory(category);
+
+            Task createdTask = taskService.createTask(task);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdTask);
+
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Failed to create task: " + e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping
-    public List<Task> getAllTasks() {
-        return taskService.getAllTasks();
+    public ResponseEntity<List<Task>> getAllTasks(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Boolean completed) {
+
+        try {
+            List<Task> tasks;
+            if (userId != null && completed != null) {
+                tasks = taskService.getTasksByUserIdAndCompleted(userId, completed);
+            } else if (userId != null) {
+                tasks = taskService.getTasksByUserId(userId);
+            } else {
+                tasks = taskService.getAllTasks();
+            }
+            return ResponseEntity.ok(tasks);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping("/{taskId}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long taskId) {
-        Task task = taskService.getTaskById(taskId);
-        return task != null ? ResponseEntity.ok(task) : ResponseEntity.notFound().build();
+    public ResponseEntity<?> getTaskById(@PathVariable Long taskId) {
+        try {
+            Task task = taskService.getTaskById(taskId);
+            if (task == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(task);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Failed to retrieve task");
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PutMapping("/{taskId}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long taskId, @RequestBody Task taskDetails) {
-        Task updatedTask = taskService.updateTask(taskId, taskDetails);
-        return updatedTask != null ? ResponseEntity.ok(updatedTask) : ResponseEntity.notFound().build();
+    public ResponseEntity<?> updateTask(
+            @PathVariable Long taskId,
+            @Valid @RequestBody TaskUpdateRequest request) {
+
+        try {
+            Task existingTask = taskService.getTaskById(taskId);
+            if (existingTask == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Update task fields
+            existingTask.setTitle(request.getTitle());
+            existingTask.setDescription(request.getDescription());
+            existingTask.setCompleted(request.isCompleted());
+
+            // Update category if provided
+            if (request.getCategoryId() != null) {
+                Category category = categoryService.getCategoryById(Long.valueOf(request.getCategoryId()));
+                if (category != null) {
+                    existingTask.setCategory(category);
+                }
+            }
+
+            Task updatedTask = taskService.updateTask(taskId, existingTask);
+            return ResponseEntity.ok(updatedTask);
+
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Failed to update task: " + e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @PatchMapping("/{taskId}/complete")
+    public ResponseEntity<?> toggleTaskComplete(@PathVariable Long taskId) {
+        try {
+            Task task = taskService.toggleTaskComplete(taskId);
+            return ResponseEntity.ok(task);
+        } catch (RuntimeException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", e.getMessage());
+            return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Failed to toggle task completion");
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @DeleteMapping("/{taskId}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long taskId) {
-        Task task = taskService.getTaskById(taskId);
-        if (task != null) {
+    public ResponseEntity<?> deleteTask(@PathVariable Long taskId) {
+        try {
+            Task task = taskService.getTaskById(taskId);
+            if (task == null) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "Task not found");
+                return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+            }
+
             taskService.deleteTask(taskId);
-            return ResponseEntity.noContent().build();
+            Map<String, String> successResponse = new HashMap<>();
+            successResponse.put("message", "Task deleted successfully");
+            return new ResponseEntity<>(successResponse, HttpStatus.OK);
+
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Failed to delete task");
+            return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
         }
-        return ResponseEntity.notFound().build();
     }
 }

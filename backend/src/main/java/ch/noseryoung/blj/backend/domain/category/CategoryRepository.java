@@ -1,12 +1,9 @@
 package ch.noseryoung.blj.backend.domain.category;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-
-public interface CategoryRepository extends JpaRepository<Category, Long> {
-    Category findByName(String name);
-}
+import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
-    ScopedValue<Object> findById(Long id);
+    Category findByName(String name);
 }

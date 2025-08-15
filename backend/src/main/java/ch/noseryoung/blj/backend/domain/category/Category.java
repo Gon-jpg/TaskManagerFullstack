@@ -20,6 +20,6 @@ public class Category {
     private String name;
 
     @OneToMany(mappedBy = "category")
-    @JsonManagedReference
+    @JsonManagedReference("category-tasks")
     private Set<Task> tasks;
 }

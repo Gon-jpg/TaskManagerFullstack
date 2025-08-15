@@ -19,6 +19,10 @@ public class UserService {
         return userRepository.findById(id).orElse(null);
     }
 
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
     public User createUser(User user) {
         return userRepository.save(user);
     }
@@ -35,7 +39,6 @@ public class UserService {
         User user = getUserById(id);
         if (user != null) {
             user.setUsername(userDetails.getUsername());
-            user.setPassword(userDetails.getPassword());
             return userRepository.save(user);
         }
         return null;

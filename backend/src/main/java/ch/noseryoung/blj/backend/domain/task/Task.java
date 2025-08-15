@@ -2,6 +2,7 @@ package ch.noseryoung.blj.backend.domain.task;
 
 import ch.noseryoung.blj.backend.domain.category.Category;
 import ch.noseryoung.blj.backend.domain.user.User;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,9 +37,11 @@ public class Task {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference("user-tasks")
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
+    @JsonBackReference("category-tasks")
     private Category category;
 }
