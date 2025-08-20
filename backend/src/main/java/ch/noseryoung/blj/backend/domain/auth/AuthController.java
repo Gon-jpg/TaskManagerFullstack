@@ -1,15 +1,17 @@
 package ch.noseryoung.blj.backend.domain.auth;
 
-import ch.noseryoung.blj.backend.config.JwtUtil; // Import JwtUtil
+import ch.noseryoung.blj.backend.config.JwtUtils; // Import JwtUtil
 import ch.noseryoung.blj.backend.domain.user.User;
 import ch.noseryoung.blj.backend.domain.user.UserDTO;
 import ch.noseryoung.blj.backend.domain.user.UserService;
+import ch.noseryoung.blj.backend.exception.TokenRefreshException;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,16 +22,17 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final UserService userService;
-    private final BCryptPasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil; // Add JwtUtil
+    @Autowired
+    UserService userService;
 
     @Autowired
-    public AuthController(UserService userService, BCryptPasswordEncoder passwordEncoder, JwtUtil jwtUtil) { // Inject JwtUtil
-        this.userService = userService;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil; // Set JwtUtil
-    }
+    PasswordEncoder passwordEncoder;
+
+    @Autowired
+    JwtUtils jwtUtils;
+
+    @Autowired
+    RefreshTokenService refreshTokenService;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, BindingResult bindingResult) {
@@ -82,7 +85,7 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
             }
 
-            final String token = jwtUtil.generateToken(user.getUsername());
+            final String token = jwtUtils.generateJwtToken(user.getUsername());
 
             LoginResponse response = new LoginResponse("Login successful", token, user.getId());
 
@@ -108,6 +111,21 @@ public class AuthController {
 
         UserDTO userDTO = new UserDTO(user.getId(), user.getUsername());
         return ResponseEntity.ok(userDTO);
+    }
+
+    @PostMapping("/refreshtoken")
+    public ResponseEntity<?> refreshtoken(@Valid @RequestBody TokenRefreshRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String token = jwtUtils.generateJwtToken(user.getUsername());
+                    return ResponseEntity.ok(new TokenRefreshResponse(token, requestRefreshToken));
+                })
+                .orElseThrow(() -> new TokenRefreshException(requestRefreshToken,
+                        "Refresh token is not in database!"));
     }
 
     @GetMapping("/validate-token")
